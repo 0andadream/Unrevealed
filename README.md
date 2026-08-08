@@ -51,6 +51,15 @@ cd web && npm install && npm run dev
 # http://localhost:3000
 ```
 
+### Vercel
+
+Set **Root Directory** to `web`, then env:
+
+- `NEXT_PUBLIC_CHAIN_ID=84532`
+- `NEXT_PUBLIC_INCO_GROVE=0x4984b0AFa995C103c1a386e1e87138A9597dafCC`
+- `NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com`
+
+
 ### Env (`web/.env.local`)
 
 ```
