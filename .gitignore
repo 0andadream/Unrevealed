@@ -1,0 +1,11 @@
+node_modules/
+artifacts/
+cache/
+.env
+.env.local
+web/node_modules/
+web/.next/
+web/.env.local
+web/out/
+deployments.*.json
+.DS_Store

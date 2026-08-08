@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
+  --font-ui: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  background: #0b0e14;
+  color: #e8eef8;
+}
+
+body {
+  font-family: var(--font-ui);
+}
+
+.text-glow {
+  text-shadow: 0 0 12px rgba(167, 139, 250, 0.55);
+}
+
+.pixel-panel {
+  @apply rounded-xl border border-grove-border bg-grove-panel/95 backdrop-blur-sm shadow-lg;
+}
+
+.pixel-btn {
+  @apply rounded-lg border border-grove-border bg-grove-panel px-3 py-2 text-xs uppercase tracking-wider text-grove-mist transition hover:border-grove-glow hover:text-white;
+}
+
+/* soft scanline */
+.scanlines::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
