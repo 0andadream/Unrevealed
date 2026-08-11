@@ -4,18 +4,33 @@
   "private": true,
   "description": "Inco Grove — private on-chain RPG for Inco Summer Game Jam",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "compile": "hardhat compile",
-    "deploy:testnet": "hardhat run scripts/deploy.cjs --network baseSepolia",
-    "dev": "npm run dev --prefix web",
-    "build": "npm run build --prefix web",
-    "postinstall": "npm install --prefix web || true"
+    "deploy:testnet": "hardhat run scripts/deploy.cjs --network baseSepolia"
   },
   "dependencies": {
-    "@inco/lightning": "1.0.2"
+    "@inco/lightning": "1.0.2",
+    "@inco/lightning-js": "1.0.2",
+    "buffer": "^6.0.3",
+    "next": "^15.1.0",
+    "phaser": "^3.87.0",
+    "process": "^0.11.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.23.2"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.7",
-    "hardhat": "^2.22.19"
+    "hardhat": "^2.22.19",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2"
   }
 }

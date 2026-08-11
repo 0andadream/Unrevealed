@@ -33,40 +33,40 @@ Quest: *Gather 20 Crystal Dust* (private progress).
 ```
 contracts/IncoGrove.sol   # Inco encrypted RPG state + session keys
 scripts/deploy.cjs
-web/                     # Next.js 15 + Phaser 3 + Tailwind
+src/                     # Next.js 15 App Router + Phaser 3 + Tailwind
+package.json             # Next.js + Hardhat (root — Vercel detects Next)
 ```
 
 ## Setup
 
 ```bash
-# root
 cp .env.example .env
 # set PRIVATE_KEY_BASE_SEPOLIA (funded on Base Sepolia)
 
 npm install
 npm run compile
-npm run deploy:testnet   # writes web/.env.local
+npm run deploy:testnet   # writes .env.local
 
-cd web && npm install && npm run dev
+npm run dev
 # http://localhost:3000
+```
+
+### Env (`.env.local`)
+
+```
+NEXT_PUBLIC_CHAIN_ID=84532
+NEXT_PUBLIC_INCO_GROVE=0x4984b0AFa995C103c1a386e1e87138A9597dafCC
+NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com
 ```
 
 ### Vercel
 
-Set **Root Directory** to `web`, then env:
-
-- `NEXT_PUBLIC_CHAIN_ID=84532`
-- `NEXT_PUBLIC_INCO_GROVE=0x4984b0AFa995C103c1a386e1e87138A9597dafCC`
-- `NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com`
-
-
-### Env (`web/.env.local`)
-
-```
-NEXT_PUBLIC_CHAIN_ID=84532
-NEXT_PUBLIC_INCO_GROVE=0xYourDeployedAddress
-NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com
-```
+- **Root Directory:** leave empty (repo root)
+- **Framework:** Next.js (auto-detected from root `package.json`)
+- Env vars:
+  - `NEXT_PUBLIC_CHAIN_ID=84532`
+  - `NEXT_PUBLIC_INCO_GROVE=0x4984b0AFa995C103c1a386e1e87138A9597dafCC`
+  - `NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com`
 
 ## Session keys (no popups on collect)
 

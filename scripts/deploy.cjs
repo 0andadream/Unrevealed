@@ -39,9 +39,9 @@ async function main() {
     `NEXT_PUBLIC_RPC_URL=https://base-sepolia-rpc.publicnode.com`,
     "",
   ].join("\n");
-  fs.writeFileSync(path.join(__dirname, "../web/.env.local"), env);
-  fs.writeFileSync(path.join(__dirname, "../web/.env.production"), env);
-  console.log("Wrote web env files");
+  fs.writeFileSync(path.join(__dirname, "../.env.local"), env);
+  fs.writeFileSync(path.join(__dirname, "../.env.production"), env);
+  console.log("Wrote .env.local and .env.production");
 }
 
 main().catch((e) => {
