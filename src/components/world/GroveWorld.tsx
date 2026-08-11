@@ -36,7 +36,6 @@ function Tree({ x, z, h, r }: { x: number; z: number; h: number; r: number }) {
   const phase = useMemo(() => Math.random() * Math.PI * 2, []);
   useFrame(({ clock }) => {
     if (!g.current) return;
-    // gentle wind sway
     g.current.rotation.z = Math.sin(clock.elapsedTime * 0.7 + phase) * 0.04;
     g.current.rotation.x = Math.cos(clock.elapsedTime * 0.5 + phase) * 0.02;
   });
@@ -63,26 +62,112 @@ function Tree({ x, z, h, r }: { x: number; z: number; h: number; r: number }) {
   );
 }
 
+/** Cyan/blue sparkle burst — lightweight instanced points */
 function CollectBurst({ x, z, onDone }: { x: number; z: number; onDone: () => void }) {
-  const ref = useRef<THREE.Group>(null);
+  const group = useRef<THREE.Group>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+  const coreRef = useRef<THREE.Mesh>(null);
+  const pointsRef = useRef<THREE.Points>(null);
   const t0 = useRef(0);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
+
+  const { positions, velocities, colors } = useMemo(() => {
+    const n = 36;
+    const positions = new Float32Array(n * 3);
+    const velocities = new Float32Array(n * 3);
+    const colors = new Float32Array(n * 3);
+    const cA = new THREE.Color("#67e8f9");
+    const cB = new THREE.Color("#a5f3fc");
+    const cC = new THREE.Color("#e0f2fe");
+    for (let i = 0; i < n; i++) {
+      positions[i * 3] = 0;
+      positions[i * 3 + 1] = 0;
+      positions[i * 3 + 2] = 0;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI * 0.65;
+      const speed = 1.4 + Math.random() * 2.2;
+      velocities[i * 3] = Math.sin(phi) * Math.cos(theta) * speed;
+      velocities[i * 3 + 1] = Math.cos(phi) * speed * 0.85 + 0.4;
+      velocities[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * speed;
+      const c = i % 3 === 0 ? cA : i % 3 === 1 ? cB : cC;
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+    return { positions, velocities, colors };
+  }, []);
+
+  useFrame(({ clock }, dt) => {
+    if (!group.current) return;
     if (!t0.current) t0.current = clock.elapsedTime;
     const t = clock.elapsedTime - t0.current;
-    ref.current.scale.setScalar(1 + t * 2.2);
-    const mat = (ref.current.children[0] as THREE.Mesh)
-      .material as THREE.MeshBasicMaterial;
-    mat.opacity = Math.max(0, 1 - t * 1.6);
-    if (t > 0.7) onDone();
+
+    // Expand + fade ring
+    if (ringRef.current) {
+      const s = 0.4 + t * 3.2;
+      ringRef.current.scale.setScalar(s);
+      const mat = ringRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = Math.max(0, 0.55 - t * 0.9);
+    }
+    // Core flash then dissolve
+    if (coreRef.current) {
+      const s = 1 + t * 1.8;
+      coreRef.current.scale.setScalar(s);
+      const mat = coreRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = Math.max(0, 0.85 - t * 1.5);
+    }
+
+    // Particle outward burst
+    if (pointsRef.current) {
+      const pos = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
+      const arr = pos.array as Float32Array;
+      for (let i = 0; i < 36; i++) {
+        arr[i * 3] += velocities[i * 3] * dt;
+        arr[i * 3 + 1] += velocities[i * 3 + 1] * dt;
+        arr[i * 3 + 2] += velocities[i * 3 + 2] * dt;
+        velocities[i * 3 + 1] -= 2.8 * dt; // soft gravity
+      }
+      pos.needsUpdate = true;
+      const mat = pointsRef.current.material as THREE.PointsMaterial;
+      mat.opacity = Math.max(0, 1 - t * 1.35);
+      mat.size = Math.max(0.04, 0.16 - t * 0.08);
+    }
+
+    if (t > 0.85) onDone();
   });
+
   return (
-    <group ref={ref} position={[x, 0.6, z]}>
-      <mesh>
-        <sphereGeometry args={[0.35, 12, 12]} />
-        <meshBasicMaterial color="#67e8f9" transparent opacity={0.7} />
+    <group ref={group} position={[x, 0.65, z]}>
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[0.28, 14, 14]} />
+        <meshBasicMaterial color="#a5f3fc" transparent opacity={0.85} depthWrite={false} />
       </mesh>
-      <Sparkles count={28} scale={1.8} size={3} speed={1.2} color="#a5f3fc" />
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.2, 0.38, 28]} />
+        <meshBasicMaterial
+          color="#67e8f9"
+          transparent
+          opacity={0.55}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <points ref={pointsRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+          <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.14}
+          transparent
+          opacity={1}
+          depthWrite={false}
+          vertexColors
+          sizeAttenuation
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+      <Sparkles count={18} scale={1.6} size={2.5} speed={1.4} color="#e0f2fe" />
+      <pointLight color="#67e8f9" intensity={3.5} distance={4} decay={2} />
     </group>
   );
 }
@@ -101,8 +186,20 @@ function Crystal({
   onNear: (id: number) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const playerRef = useRef<THREE.Vector3 | null>(null);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
+  const glowMat = useRef<THREE.MeshBasicMaterial>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
+  const playerRef = useRef<THREE.Vector3 | null>(null);
+  // absorb phase after collection trigger
+  const absorbT = useRef<number | null>(null);
+  const [gone, setGone] = useState(false);
+  const notified = useRef(false);
+
+  useEffect(() => {
+    if (taken && absorbT.current === null) {
+      absorbT.current = 0;
+    }
+  }, [taken]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -113,25 +210,52 @@ function Crystal({
     return () => window.removeEventListener("grove-player", handler);
   }, []);
 
-  useFrame(({ clock }) => {
-    if (!ref.current || taken) return;
-    const s = 1 + Math.sin(clock.elapsedTime * 3 + id) * 0.06;
-    ref.current.scale.setScalar(s);
-    ref.current.position.y = 0.55 + Math.sin(clock.elapsedTime * 2 + id) * 0.12;
-    ref.current.rotation.y = clock.elapsedTime * 0.9 + id;
-    if (mat.current) {
-      mat.current.emissiveIntensity = 1.2 + Math.sin(clock.elapsedTime * 4 + id) * 0.5;
+  useFrame(({ clock }, dt) => {
+    if (!ref.current || gone) return;
+
+    // Collection absorb: scale-up + fade
+    if (absorbT.current !== null) {
+      absorbT.current += dt;
+      const t = absorbT.current;
+      const s = 1 + t * 1.6;
+      ref.current.scale.setScalar(s);
+      ref.current.position.y = 0.55 + t * 0.9;
+      if (mat.current) {
+        mat.current.opacity = Math.max(0, 0.95 - t * 2.4);
+        mat.current.emissiveIntensity = 2.5 + t * 4;
+      }
+      if (glowMat.current) glowMat.current.opacity = Math.max(0, 0.18 - t * 0.5);
+      if (lightRef.current) lightRef.current.intensity = Math.max(0, 3.5 - t * 6);
+      if (t > 0.42) setGone(true);
+      return;
     }
-    if (playerRef.current) {
+
+    // Alive idle: gentle float + soft glow pulse
+    const pulse = Math.sin(clock.elapsedTime * 2.4 + id);
+    const s = 1 + pulse * 0.07;
+    ref.current.scale.setScalar(s);
+    ref.current.position.y = 0.55 + Math.sin(clock.elapsedTime * 1.8 + id) * 0.14;
+    ref.current.rotation.y = clock.elapsedTime * 0.85 + id;
+    if (mat.current) {
+      mat.current.emissiveIntensity = 1.15 + Math.sin(clock.elapsedTime * 3.2 + id) * 0.55;
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = 1.9 + Math.sin(clock.elapsedTime * 3.2 + id) * 0.7;
+    }
+
+    if (playerRef.current && !notified.current) {
       const d = playerRef.current.distanceTo(new THREE.Vector3(x + 0.5, 0, z + 0.5));
-      if (d < 0.9) onNear(id);
+      if (d < 0.9) {
+        notified.current = true;
+        onNear(id);
+      }
     }
   });
 
-  if (taken) return null;
+  if (gone) return null;
 
   return (
-    <Float speed={2} rotationIntensity={0.25} floatIntensity={0.35}>
+    <Float speed={1.8} rotationIntensity={0.2} floatIntensity={0.28}>
       <group ref={ref} position={[x + 0.5, 0.55, z + 0.5]}>
         <mesh castShadow>
           <octahedronGeometry args={[0.34, 0]} />
@@ -148,10 +272,21 @@ function Crystal({
         </mesh>
         <mesh scale={1.55}>
           <octahedronGeometry args={[0.34, 0]} />
-          <meshBasicMaterial color="#67e8f9" transparent opacity={0.1} depthWrite={false} />
+          <meshBasicMaterial
+            ref={glowMat}
+            color="#67e8f9"
+            transparent
+            opacity={0.12}
+            depthWrite={false}
+          />
         </mesh>
-        <pointLight color="#7dd3fc" intensity={2.2} distance={5} decay={2} />
-        <Sparkles count={12} scale={1.2} size={2} speed={0.4} color="#e0f2fe" />
+        {/* Soft ground halo — feels valuable */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+          <ringGeometry args={[0.28, 0.52, 24]} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={0.18} depthWrite={false} />
+        </mesh>
+        <pointLight ref={lightRef} color="#7dd3fc" intensity={2.2} distance={5} decay={2} />
+        <Sparkles count={14} scale={1.25} size={2.1} speed={0.35} color="#e0f2fe" />
       </group>
     </Float>
   );
@@ -166,6 +301,7 @@ function PlayerController({
 }) {
   const body = useRef<THREE.Group>(null);
   const trail = useRef<THREE.Points>(null);
+  const pulseMat = useRef<THREE.MeshBasicMaterial>(null);
   const { camera } = useThree();
   const keys = useRef<Record<string, boolean>>({});
   const target = useRef<THREE.Vector3 | null>(null);
@@ -173,6 +309,9 @@ function PlayerController({
   const trailPos = useRef<Float32Array>(new Float32Array(48));
   const trailI = useRef(0);
   const sway = useRef(0);
+  // collect juice: camera + player pulse
+  const camPulse = useRef(0);
+  const playerPulse = useRef(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -183,9 +322,17 @@ function PlayerController({
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+
+    const onJuice = () => {
+      camPulse.current = 1;
+      playerPulse.current = 1;
+    };
+    window.addEventListener("grove-collect-juice", onJuice);
+
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener("grove-collect-juice", onJuice);
     };
   }, []);
 
@@ -199,7 +346,6 @@ function PlayerController({
     if (keys.current.KeyA || keys.current.ArrowLeft) dx -= 1;
     if (keys.current.KeyD || keys.current.ArrowRight) dx += 1;
 
-    // mobile joystick (x = strafe, z = forward in screen space already mapped)
     if (mobileVector && (mobileVector.x !== 0 || mobileVector.z !== 0)) {
       target.current = null;
       dx = mobileVector.x;
@@ -230,13 +376,25 @@ function PlayerController({
     p.x = THREE.MathUtils.clamp(p.x, 0.4, MAP_W - 0.4);
     p.z = THREE.MathUtils.clamp(p.z, 0.4, MAP_H - 0.4);
 
-    // idle bob
     const moving = Math.abs(dx) + Math.abs(dz) > 0.0001;
-    const bob = moving ? Math.sin(clock.elapsedTime * 12) * 0.04 : Math.sin(clock.elapsedTime * 2) * 0.02;
+    const bob = moving
+      ? Math.sin(clock.elapsedTime * 12) * 0.04
+      : Math.sin(clock.elapsedTime * 2) * 0.02;
+
+    // Player collect pulse (subtle scale + ring flash)
+    if (playerPulse.current > 0) {
+      playerPulse.current = Math.max(0, playerPulse.current - dt * 2.8);
+    }
+    const pPulse = playerPulse.current;
+    const bodyScale = 1 + pPulse * 0.12;
+    body.current.scale.setScalar(bodyScale);
     body.current.position.set(p.x, bob, p.z);
     if (moving) body.current.rotation.y = Math.atan2(dx, dz);
 
-    // trail
+    if (pulseMat.current) {
+      pulseMat.current.opacity = 0.22 + pPulse * 0.55;
+    }
+
     if (moving && trail.current) {
       const i = trailI.current % 16;
       trailPos.current[i * 3] = p.x;
@@ -246,15 +404,19 @@ function PlayerController({
       trail.current.geometry.attributes.position.needsUpdate = true;
     }
 
-    // soft camera sway
+    // Camera: follow + soft sway + collect kick
+    if (camPulse.current > 0) {
+      camPulse.current = Math.max(0, camPulse.current - dt * 3.2);
+    }
+    const kick = camPulse.current * 0.28;
     sway.current = Math.sin(clock.elapsedTime * 0.35) * 0.15;
-    const camTarget = new THREE.Vector3(p.x, 0.7, p.z);
+    const camTarget = new THREE.Vector3(p.x, 0.7 + kick * 0.15, p.z);
     const camPos = new THREE.Vector3(
       p.x - 0.15 + sway.current,
-      7.0,
-      p.z + 7.6
+      7.0 - kick * 0.35,
+      p.z + 7.6 - kick * 0.2
     );
-    camera.position.lerp(camPos, 0.07);
+    camera.position.lerp(camPos, 0.07 + kick * 0.12);
     camera.lookAt(camTarget);
 
     window.dispatchEvent(
@@ -269,7 +431,6 @@ function PlayerController({
     const pointer = new THREE.Vector2();
     const hit = new THREE.Vector3();
     const onClick = (e: PointerEvent) => {
-      // ignore UI / joystick region roughly bottom-left mobile
       const rect = gl.domElement.getBoundingClientRect();
       if (e.clientY > rect.bottom - 140 && e.clientX < rect.left + 140) return;
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -307,10 +468,15 @@ function PlayerController({
           />
         </mesh>
         <pointLight color="#67e8f9" intensity={0.85} distance={3.5} position={[0, 0.8, 0]} />
-        {/* soft ground ring */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[0.25, 0.45, 24]} />
-          <meshBasicMaterial color="#22d3ee" transparent opacity={0.25} />
+          <meshBasicMaterial
+            ref={pulseMat}
+            color="#22d3ee"
+            transparent
+            opacity={0.25}
+            depthWrite={false}
+          />
         </mesh>
       </group>
       <points ref={trail} geometry={trailGeo}>
@@ -352,6 +518,16 @@ function SceneInner({
       setBursts((b) => [...b, { id: Date.now(), x: c.x + 0.5, z: c.z + 0.5 }]);
     }
     setTaken((prev) => new Set(prev).add(id));
+    // Camera + player pulse
+    window.dispatchEvent(new CustomEvent("grove-collect-juice"));
+    // Soft haptic on mobile
+    try {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(12);
+      }
+    } catch {
+      /* ignore */
+    }
     onCollect(id);
   };
 
@@ -425,7 +601,11 @@ export default function GroveWorld({
         shadows
         dpr={[1, 1.75]}
         camera={{ position: [12, 8, 18], fov: 45, near: 0.1, far: 80 }}
-        gl={{ antialias: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
+        gl={{
+          antialias: true,
+          powerPreference: "high-performance",
+          toneMapping: THREE.ACESFilmicToneMapping,
+        }}
       >
         <SceneInner
           collectedMask={collectedMask}

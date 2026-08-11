@@ -10,6 +10,7 @@ type Props = {
   stats: DecryptedStats | null;
   decrypted: boolean;
   decryptFlash: boolean;
+  numberHighlight: boolean;
   privateCollects: number;
   panel: "none" | "inventory" | "character" | "quests";
   onPanel: (p: Props["panel"]) => void;
@@ -27,6 +28,7 @@ export function Hud({
   stats,
   decrypted,
   decryptFlash,
+  numberHighlight,
   privateCollects,
   panel,
   onPanel,
@@ -66,19 +68,25 @@ export function Hud({
           </div>
         </div>
 
-        {/* XP — silhouette when locked */}
+        {/* XP — silhouette when locked, warm when revealed */}
         <div
           className={`pointer-events-auto glass min-w-[210px] rounded-2xl px-4 py-3 transition-all duration-500 ${
             sealed
               ? "ring-1 ring-cyan-400/30"
-              : "ring-1 ring-amber-300/35"
-          } ${decryptFlash ? "decrypt-flash" : ""}`}
+              : "ring-1 ring-amber-300/40"
+          } ${decryptFlash ? "decrypt-flash" : ""} ${
+            numberHighlight ? "number-highlight" : ""
+          }`}
         >
           <div className="flex justify-between text-xs">
             <span className={sealed ? "text-cyan-200/80" : "text-amber-100/90"}>
               {sealed ? "Level 🔒" : `Level ${level}`}
             </span>
-            <span className={sealed ? "text-cyan-300/70" : "text-amber-200/80"}>
+            <span
+              className={`${
+                sealed ? "text-cyan-300/70" : "text-amber-100 font-semibold"
+              } ${numberHighlight && !sealed ? "stat-pop" : ""}`}
+            >
               {sealed ? "XP sealed" : `${xp} XP`}
             </span>
           </div>
@@ -92,9 +100,13 @@ export function Hud({
               style={{ width: `${sealed ? lockedXpGuess : xpPct}%` }}
             />
           </div>
-          {sealed && (
+          {sealed ? (
             <div className="mt-1 text-[10px] text-cyan-400/60">
               Private fill · decrypt to reveal exact XP
+            </div>
+          ) : (
+            <div className="mt-1 text-[10px] text-amber-200/55">
+              Revealed privately · not public on-chain
             </div>
           )}
         </div>
@@ -118,7 +130,9 @@ export function Hud({
             onClick={onDecrypt}
             disabled={!ready}
             className={`glass-btn glass-btn-primary min-w-[160px] ${
-              sealed ? "shadow-[0_0_24px_rgba(34,211,238,0.25)]" : ""
+              sealed
+                ? "shadow-[0_0_24px_rgba(34,211,238,0.25)]"
+                : "border-amber-300/40 shadow-[0_0_20px_rgba(251,191,36,0.15)]"
             }`}
           >
             {sealed ? "Decrypt with Inco" : "Refresh decrypt"}
@@ -150,11 +164,11 @@ export function Hud({
               key={id}
               type="button"
               className={`glass-btn ${panel === id ? "ring-1 ring-cyan-300/50" : ""} ${
-                sealed ? "border-cyan-400/25" : "border-amber-300/25"
+                sealed ? "border-cyan-400/25" : "border-amber-300/30"
               }`}
               onClick={() => onPanel(panel === id ? "none" : id)}
             >
-              {sealed ? "🔒 " : ""}
+              {sealed ? "🔒 " : "✦ "}
               {label}
             </button>
           ))}
@@ -165,7 +179,9 @@ export function Hud({
         <div
           className={`absolute bottom-24 left-1/2 z-30 w-[min(360px,92vw)] -translate-x-1/2 glass rounded-2xl p-5 transition-all ${
             decryptFlash ? "decrypt-flash" : ""
-          } ${sealed ? "ring-1 ring-cyan-400/30" : "ring-1 ring-amber-300/30"}`}
+          } ${numberHighlight ? "number-highlight" : ""} ${
+            sealed ? "ring-1 ring-cyan-400/30" : "ring-1 ring-amber-300/35"
+          }`}
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold tracking-wide text-sky-50">
@@ -191,9 +207,27 @@ export function Hud({
 
           {panel === "inventory" && (
             <>
-              <Row label="Crystal Dust" value={stats?.dust} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="Potions" value={stats?.potions} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="Map pieces" value={stats?.maps} locked={sealed} onDecrypt={onDecrypt} />
+              <Row
+                label="Crystal Dust"
+                value={stats?.dust}
+                locked={sealed}
+                highlight={numberHighlight}
+                onDecrypt={onDecrypt}
+              />
+              <Row
+                label="Potions"
+                value={stats?.potions}
+                locked={sealed}
+                highlight={numberHighlight}
+                onDecrypt={onDecrypt}
+              />
+              <Row
+                label="Map pieces"
+                value={stats?.maps}
+                locked={sealed}
+                highlight={numberHighlight}
+                onDecrypt={onDecrypt}
+              />
               <p className="mt-3 text-[11px] leading-relaxed text-sky-300/60">
                 On-chain as Inco <code className="text-cyan-300">euint256</code>. Only your
                 session can decrypt.
@@ -203,18 +237,26 @@ export function Hud({
 
           {panel === "character" && (
             <>
-              <Row label="HP" value={stats?.hp} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="ATK" value={stats?.atk} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="DEF" value={stats?.def} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="Luck" value={stats?.luck} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="Level" value={stats?.level} locked={sealed} onDecrypt={onDecrypt} />
-              <Row label="XP" value={stats?.xp} locked={sealed} onDecrypt={onDecrypt} />
+              <Row label="HP" value={stats?.hp} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
+              <Row label="ATK" value={stats?.atk} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
+              <Row label="DEF" value={stats?.def} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
+              <Row label="Luck" value={stats?.luck} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
+              <Row label="Level" value={stats?.level} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
+              <Row label="XP" value={stats?.xp} locked={sealed} highlight={numberHighlight} onDecrypt={onDecrypt} />
             </>
           )}
 
           {panel === "quests" && (
-            <div className="rounded-xl border border-cyan-500/20 bg-black/25 p-3">
-              <div className="text-sm text-cyan-100">Ghost Collector</div>
+            <div
+              className={`rounded-xl border p-3 ${
+                sealed
+                  ? "border-cyan-500/20 bg-black/25"
+                  : "border-amber-400/25 bg-amber-950/15"
+              }`}
+            >
+              <div className={`text-sm ${sealed ? "text-cyan-100" : "text-amber-50"}`}>
+                Ghost Collector
+              </div>
               <div className="mt-1 text-[11px] leading-relaxed text-sky-300/65">
                 Collect crystals while your inventory stays encrypted. Decrypt only when you
                 want to verify — privacy is the run.
@@ -231,14 +273,16 @@ export function Hud({
               </div>
               <div className="mt-1 flex justify-between text-[11px] text-sky-200/70">
                 <span>{sealed ? "Private progress" : "Revealed"}</span>
-                <span>
+                <span className={!sealed && numberHighlight ? "stat-pop text-amber-100" : ""}>
                   {decrypted && stats
                     ? `${stats.quest} / ${QUEST_TARGET} dust`
                     : `~${Math.min(QUEST_TARGET, privateCollects * 5)} / ${QUEST_TARGET} (est.)`}
                 </span>
               </div>
               {decrypted && (stats?.quest ?? 0) >= QUEST_TARGET && (
-                <div className="mt-2 text-xs text-amber-200">Quest complete — without public spoilers.</div>
+                <div className="mt-2 text-xs text-amber-200">
+                  Quest complete — without public spoilers.
+                </div>
               )}
             </div>
           )}
@@ -262,22 +306,32 @@ function Row({
   label,
   value,
   locked,
+  highlight,
   onDecrypt,
 }: {
   label: string;
   value?: number;
   locked: boolean;
+  highlight?: boolean;
   onDecrypt: () => void;
 }) {
   return (
     <div className="mb-2 flex items-center justify-between border-b border-white/5 py-2 text-sm">
       <span className="text-sky-200/70">{label}</span>
       {locked ? (
-        <button type="button" className="text-xs text-cyan-300 underline" onClick={onDecrypt}>
-          🔒 Decrypt
+        <button
+          type="button"
+          className="rounded-md bg-cyan-500/10 px-2 py-0.5 text-xs text-cyan-300 ring-1 ring-cyan-400/25 transition hover:bg-cyan-500/20"
+          onClick={onDecrypt}
+        >
+          🔒 sealed
         </button>
       ) : (
-        <span className="font-medium text-amber-50 animate-[fadeIn_0.4s_ease]">
+        <span
+          className={`font-semibold tabular-nums text-amber-50 animate-[fadeIn_0.45s_ease] ${
+            highlight ? "stat-pop" : ""
+          }`}
+        >
           {value}
         </span>
       )}

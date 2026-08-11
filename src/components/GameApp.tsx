@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
+import { DecryptReveal } from "@/components/DecryptReveal";
 import { Hud } from "@/components/Hud";
 import { MobileControls } from "@/components/MobileControls";
 import {
@@ -15,19 +16,24 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
 });
 
+type FloatKind = "loot" | "inco" | "reveal";
+
 export default function GameApp() {
   const grove = useGrove();
   const [panel, setPanel] = useState<"none" | "inventory" | "character" | "quests">(
     "none"
   );
-  const [floats, setFloats] = useState<{ id: number; text: string; kind: "loot" | "inco" }[]>(
-    []
-  );
+  const [floats, setFloats] = useState<
+    { id: number; text: string; kind: FloatKind }[]
+  >([]);
   const [showOnboard, setShowOnboard] = useState(false);
   const [decrypted, setDecrypted] = useState(false);
   const [decryptFlash, setDecryptFlash] = useState(false);
+  const [revealActive, setRevealActive] = useState(false);
+  const [numberHighlight, setNumberHighlight] = useState(false);
   const [privateCollects, setPrivateCollects] = useState(0);
   const [mobileVec, setMobileVec] = useState({ x: 0, z: 0 });
+  const [statusBanner, setStatusBanner] = useState<string | null>(null);
 
   useEffect(() => {
     setShowOnboard(shouldShowOnboarding());
@@ -39,28 +45,35 @@ export default function GameApp() {
     return n;
   })();
 
-  const pushFloat = (text: string, kind: "loot" | "inco" = "loot") => {
+  const pushFloat = (text: string, kind: FloatKind = "loot", ms = 1400) => {
     const id = Date.now() + Math.random();
     setFloats((f) => [...f, { id, text, kind }]);
     window.setTimeout(() => {
       setFloats((f) => f.filter((x) => x.id !== id));
-    }, kind === "inco" ? 1800 : 1200);
+    }, ms);
+  };
+
+  const showBanner = (text: string, ms = 2200) => {
+    setStatusBanner(text);
+    window.setTimeout(() => setStatusBanner(null), ms);
   };
 
   const onCollect = useCallback(
     async (crystalId: number) => {
-      pushFloat("+5 Dust · +10 XP");
+      // Immediate juice feedback
+      pushFloat("+5 Dust · +10 XP", "loot", 1100);
       setPrivateCollects((c) => c + 1);
       grove.applyOptimisticCollect();
 
       if (!grove.ready) {
         grove.setError("Connect wallet once to seal loot with Inco (then no popups)");
-        pushFloat("Collected locally — connect to encrypt on Inco", "inco");
+        pushFloat("Collected · connect to encrypt on Inco", "inco", 1800);
         return;
       }
       try {
         await grove.collect(crystalId);
-        pushFloat("Encrypted & stored on Inco 🔒", "inco");
+        // Hero microcopy for the privacy moment
+        pushFloat("Encrypted on Inco", "inco", 1800);
         // keep stats sealed until user decrypts — only refresh if already open
         if (decrypted) await grove.decryptAll();
       } catch {
@@ -75,11 +88,27 @@ export default function GameApp() {
       grove.setError("Connect wallet first to decrypt your private state");
       return;
     }
-    await grove.decryptAll();
-    setDecrypted(true);
-    setDecryptFlash(true);
-    pushFloat("Private state revealed — only for you", "inco");
-    window.setTimeout(() => setDecryptFlash(false), 1200);
+    // Start elegant reveal; hold until decrypt + min ~1.3s
+    setRevealActive(true);
+    const t0 = Date.now();
+
+    try {
+      await grove.decryptAll();
+      setDecrypted(true);
+      const remaining = Math.max(0, 1350 - (Date.now() - t0));
+      if (remaining > 0) {
+        await new Promise((r) => window.setTimeout(r, remaining));
+      }
+      setRevealActive(false);
+      setDecryptFlash(true);
+      setNumberHighlight(true);
+      pushFloat("Private stats revealed", "reveal", 2000);
+      showBanner("Private stats revealed · only you can see this", 2600);
+      window.setTimeout(() => setDecryptFlash(false), 1400);
+      window.setTimeout(() => setNumberHighlight(false), 2800);
+    } catch {
+      setRevealActive(false);
+    }
   }, [grove]);
 
   return (
@@ -129,6 +158,7 @@ export default function GameApp() {
           stats={grove.stats}
           decrypted={decrypted && !!grove.stats}
           decryptFlash={decryptFlash}
+          numberHighlight={numberHighlight}
           privateCollects={privateCollects}
           panel={panel}
           onPanel={setPanel}
@@ -141,20 +171,34 @@ export default function GameApp() {
 
         <MobileControls onVector={(x, z) => setMobileVec({ x, z })} />
 
+        {/* Floating toasts */}
         <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
           {floats.map((f) => (
             <div
               key={f.id}
-              className={`absolute left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm shadow-lg animate-[floatUp_1.2s_ease_forwards] ${
-                f.kind === "inco"
-                  ? "top-[26%] bg-cyan-500/20 text-cyan-50 ring-1 ring-cyan-300/40"
-                  : "top-[32%] bg-sky-500/15 text-sky-50"
+              className={`absolute left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-sm shadow-lg animate-[floatUp_1.4s_ease_forwards] ${
+                f.kind === "reveal"
+                  ? "top-[24%] bg-amber-500/20 text-amber-50 ring-1 ring-amber-300/45"
+                  : f.kind === "inco"
+                    ? "top-[26%] bg-cyan-500/20 text-cyan-50 ring-1 ring-cyan-300/40"
+                    : "top-[32%] bg-sky-500/15 text-sky-50 ring-1 ring-sky-400/20"
               }`}
             >
               {f.text}
             </div>
           ))}
         </div>
+
+        {/* Temporary post-decrypt banner */}
+        {statusBanner && (
+          <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 animate-[fadeIn_0.35s_ease]">
+            <div className="rounded-full bg-amber-500/15 px-5 py-2 text-xs font-medium tracking-wide text-amber-50 ring-1 ring-amber-300/40 shadow-[0_0_28px_rgba(251,191,36,0.18)]">
+              {statusBanner}
+            </div>
+          </div>
+        )}
+
+        <DecryptReveal active={revealActive} />
 
         {showOnboard && (
           <OnboardingOverlay onDismiss={() => setShowOnboard(false)} />
