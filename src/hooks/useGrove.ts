@@ -177,15 +177,27 @@ export function useGrove() {
   );
 
   const decryptAll = useCallback(async () => {
-    if (!address || !handles) return;
-    setBusy("Decrypting private state (Inco)…");
+    if (!address) {
+      setError("Connect wallet to decrypt");
+      return;
+    }
+    setBusy("Decrypting private state with Inco…");
     setError(null);
     try {
-      // Prefer session client for decrypt if allowed; else main wallet
-      let client: WalletClient | null = null;
-      if (session) {
-        client = sessionWalletClient(session);
+      // Refresh handles first so latest collects are included
+      const h = await fetchHandles(address);
+      const list = h
+        ? ([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8], h[9]] as string[])
+        : handles;
+      if (!list) {
+        setError("No encrypted handles yet — collect a crystal first");
+        setBusy(null);
+        return;
       }
+      setHandles(list);
+
+      let client: WalletClient | null = null;
+      if (session) client = sessionWalletClient(session);
       if (!client?.account && mainClient) client = mainClient;
       if (!client) {
         const eth = getEthereum();
@@ -200,11 +212,11 @@ export function useGrove() {
       }
       if (!client) throw new Error("No wallet for decrypt");
 
-      const map = await decryptHandles(client, handles);
+      const map = await decryptHandles(client, list);
       const g = (i: number) => {
-        const h = handles[i];
-        if (!h || h === ZERO) return 0;
-        return Number(map[h] ?? 0n);
+        const key = list[i];
+        if (!key || key === ZERO) return 0;
+        return Number(map[key] ?? 0n);
       };
       setStats({
         dust: g(0),
@@ -218,7 +230,7 @@ export function useGrove() {
         luck: g(8) || 5,
         quest: g(9),
       });
-      push("Private stats decrypted for your eyes only");
+      push("Inco decrypt complete — only you can see this");
       setBusy(null);
     } catch (e) {
       setBusy(null);
