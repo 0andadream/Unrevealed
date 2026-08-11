@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 import { Hud } from "@/components/Hud";
 import { useGrove } from "@/hooks/useGrove";
-import { GROVE_ADDRESS } from "@/lib/config";
+import { CRYSTAL_COUNT, GROVE_ADDRESS } from "@/lib/config";
 
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
@@ -16,17 +16,19 @@ export default function GameApp() {
     "none"
   );
   const [floats, setFloats] = useState<
-    { id: number; x: number; y: number; text: string }[]
+    { id: number; text: string }[]
   >([]);
 
+  const collectedCount = (() => {
+    let n = 0;
+    for (let i = 0; i < CRYSTAL_COUNT; i++) if (grove.mask & (1 << i)) n++;
+    return n;
+  })();
+
   const onCollect = useCallback(
-    async (crystalId: number, worldX: number, worldY: number) => {
-      // Visual first
+    async (crystalId: number) => {
       const id = Date.now();
-      setFloats((f) => [
-        ...f,
-        { id, x: worldX, y: worldY, text: "+5 Dust  +10 XP" },
-      ]);
+      setFloats((f) => [...f, { id, text: "+5 DUST  +10 XP" }]);
       window.setTimeout(() => {
         setFloats((f) => f.filter((x) => x.id !== id));
       }, 1000);
@@ -39,45 +41,44 @@ export default function GameApp() {
       }
       try {
         await grove.collect(crystalId);
-        // refresh decrypt if already open
         if (grove.stats) await grove.decryptAll();
       } catch {
-        /* error set in hook */
+        /* error in hook */
       }
     },
     [grove]
   );
 
   return (
-    <div className="relative flex h-[100dvh] flex-col bg-grove-bg">
-      {/* Title strip */}
-      <header className="flex items-center justify-between border-b border-grove-border px-4 py-2">
+    <div className="stage-root relative flex h-[100dvh] flex-col overflow-hidden bg-g-bg">
+      {/* Title strip — hard pixel */}
+      <header className="relative z-20 flex items-center justify-between border-b-2 border-g-bright bg-g-bg px-3 py-2">
         <div>
-          <h1 className="font-pixel text-lg tracking-widest text-grove-glow">
+          <h1 className="text-[11px] tracking-[3px] text-g-cream text-shadow-pixel sm:text-[14px]">
             INCO GROVE
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-grove-mist">
-            Private progression · Inco Lightning · Base Sepolia
+          <p className="mt-1 text-[7px] tracking-wider text-g-bright sm:text-[8px]">
+            PRIVATE RPG · INCO LIGHTNING · BASE SEPOLIA
           </p>
         </div>
         <a
-          className="text-[10px] text-grove-mist underline hover:text-grove-crystal"
+          className="text-[7px] text-g-bright underline hover:text-g-cream sm:text-[8px]"
           href={`https://sepolia.basescan.org/address/${GROVE_ADDRESS}`}
           target="_blank"
           rel="noreferrer"
         >
-          Contract {GROVE_ADDRESS.slice(0, 8)}…
+          {GROVE_ADDRESS.slice(0, 6)}…{GROVE_ADDRESS.slice(-4)}
         </a>
       </header>
 
       {!grove.configured && (
-        <div className="bg-amber-950/50 px-4 py-2 text-center text-xs text-amber-200">
-          Contract not configured — set NEXT_PUBLIC_INCO_GROVE after deploy.
+        <div className="z-20 bg-g-mid px-3 py-1 text-center text-[8px] text-g-cream">
+          Set NEXT_PUBLIC_INCO_GROVE after deploy.
         </div>
       )}
 
       {grove.error && (
-        <div className="bg-red-950/40 px-4 py-2 text-center text-xs text-red-200">
+        <div className="z-20 border-b-2 border-red-900 bg-[#200810] px-3 py-1 text-center text-[8px] text-red-200">
           {grove.error}{" "}
           <button type="button" className="underline" onClick={() => grove.setError(null)}>
             dismiss
@@ -85,8 +86,15 @@ export default function GameApp() {
         </div>
       )}
 
-      <div className="relative min-h-0 flex-1">
-        <GameCanvas onCollect={onCollect} collectedMask={grove.mask} />
+      <div className="relative min-h-0 flex-1 bg-g-bg">
+        <GameCanvas
+          onCollect={(id) => onCollect(id)}
+          collectedMask={grove.mask}
+        />
+
+        {/* Galleria-style scanlines + vignette */}
+        <div className="stage-fx" aria-hidden />
+
         <Hud
           short={grove.short}
           ready={grove.ready}
@@ -97,14 +105,15 @@ export default function GameApp() {
           onConnect={grove.connect}
           onDecrypt={grove.decryptAll}
           log={grove.log}
+          collectedCount={collectedCount}
+          crystalTotal={CRYSTAL_COUNT}
         />
 
-        {/* DOM float texts approx center — phaser also shows floats */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-15 overflow-hidden">
           {floats.map((f) => (
             <div
               key={f.id}
-              className="absolute left-1/2 top-1/3 -translate-x-1/2 animate-bounce text-sm text-grove-crystal drop-shadow"
+              className="absolute left-1/2 top-[36%] -translate-x-1/2 text-[10px] tracking-wide text-g-crystal text-shadow-pixel"
             >
               {f.text}
             </div>
@@ -112,9 +121,8 @@ export default function GameApp() {
         </div>
       </div>
 
-      <footer className="border-t border-grove-border px-4 py-1.5 text-center text-[10px] text-grove-mist">
-        WASD / arrows move · click to walk · walk into crystals · session key collects
-        without wallet popups
+      <footer className="relative z-20 border-t-2 border-g-bright bg-g-bg px-3 py-1 text-center text-[7px] tracking-wider text-g-bright">
+        WASD / CLICK TO MOVE · WALK INTO CRYSTALS · SESSION KEY = NO POPUPS
       </footer>
     </div>
   );

@@ -3,44 +3,162 @@
 @tailwind utilities;
 
 :root {
-  --font-pixel: "Press Start 2P", ui-monospace, monospace;
-  --font-ui: "IBM Plex Mono", ui-monospace, monospace;
+  --g-bg: #081428;
+  --g-mid: #345878;
+  --g-bright: #70a8e0;
+  --g-cream: #d1e8f8;
+  --g-deep: #040c18;
+  --g-crystal: #9ad8ff;
 }
 
 html,
 body {
   height: 100%;
-  background: #0b0e14;
-  color: #e8eef8;
+  background: var(--g-bg);
+  color: var(--g-cream);
+  cursor: crosshair;
 }
 
 body {
-  font-family: var(--font-ui);
+  font-family: "Press Start 2P", "Courier New", monospace;
+  image-rendering: pixelated;
 }
 
-.text-glow {
-  text-shadow: 0 0 12px rgba(167, 139, 250, 0.55);
-}
-
+/* Hard-pixel Galleria-style panel */
 .pixel-panel {
-  @apply rounded-xl border border-grove-border bg-grove-panel/95 backdrop-blur-sm shadow-lg;
+  background: var(--g-bg);
+  border: 2px solid var(--g-bright);
+  box-shadow:
+    0 0 0 2px var(--g-bg),
+    3px 3px 0 rgba(4, 12, 24, 0.55);
+  color: var(--g-cream);
+}
+
+.pixel-panel-mid {
+  background: var(--g-mid);
+  border: 3px solid var(--g-cream);
+  box-shadow:
+    inset 0 3px 0 var(--g-bright),
+    inset 0 -4px 0 var(--g-bg);
+  color: var(--g-cream);
 }
 
 .pixel-btn {
-  @apply rounded-lg border border-grove-border bg-grove-panel px-3 py-2 text-xs uppercase tracking-wider text-grove-mist transition hover:border-grove-glow hover:text-white;
+  background: var(--g-bg);
+  border: 2px solid var(--g-bright);
+  box-shadow: 0 0 0 2px var(--g-bg), 2px 2px 0 rgba(4, 12, 24, 0.5);
+  color: var(--g-cream);
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 10px 14px;
+  text-transform: uppercase;
+  transition: transform 0.08s, background 0.08s;
 }
 
-/* soft scanline */
-.scanlines::after {
-  content: "";
+.pixel-btn:hover {
+  background: #0c1c38;
+  color: #fff;
+}
+
+.pixel-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0 0 0 2px var(--g-bg), 1px 1px 0 rgba(4, 12, 24, 0.5);
+}
+
+.pixel-btn-primary {
+  background: var(--g-mid);
+  border-color: var(--g-bright);
+  color: var(--g-cream);
+  text-shadow: 1px 1px 0 var(--g-bg);
+}
+
+.pixel-label {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--g-bright);
+  text-shadow: 1px 1px 0 var(--g-bg);
+}
+
+.pixel-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--g-cream);
+  text-shadow: 2px 2px 0 var(--g-bg);
+  line-height: 1;
+}
+
+.text-shadow-pixel {
+  text-shadow: 2px 2px 0 var(--g-bg);
+}
+
+/* Scanlines + vignette like Galleria */
+.stage-fx {
   pointer-events: none;
   position: absolute;
   inset: 0;
+  z-index: 10;
+}
+
+.stage-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
+    to bottom,
+    rgba(8, 20, 40, 0.15) 0,
+    rgba(8, 20, 40, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
   );
+}
+
+.stage-fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    transparent 55%,
+    rgba(8, 20, 40, 0.42) 100%
+  );
+}
+
+/* Corner rivets */
+.rivet {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g-bright);
+  box-shadow:
+    inset 1px 1px 0 var(--g-cream),
+    0 0 0 1px var(--g-bg);
+  z-index: 5;
+}
+
+/* Progress bar Galleria style */
+.pixel-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--g-bg);
+  border: 1px solid var(--g-mid);
+}
+
+.pixel-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--g-bright);
+  box-shadow: inset 0 1px 0 var(--g-cream);
+}
+
+/* Hide default cursor on game stage for crosshair feel */
+.stage-root {
+  cursor: none;
+}
+
+.stage-root button,
+.stage-root a,
+.stage-root input {
+  cursor: pointer;
 }

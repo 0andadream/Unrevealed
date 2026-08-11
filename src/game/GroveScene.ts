@@ -54,41 +54,43 @@ export class GroveScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setZoom(1.35);
-    this.cameras.main.setBackgroundColor("#0a1018");
+    this.cameras.main.setZoom(1.4);
+    // Galleria-like deep blue stage
+    this.cameras.main.setBackgroundColor("#081428");
 
     this.eventsApi.onReady?.();
   }
 
   private drawWorld() {
-    // ground
+    // 2-bit / handheld blue floor (Galleria language, blue-shifted)
     const g = this.add.graphics();
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
-        const shade = (x + y) % 2 === 0 ? 0x14201c : 0x101a18;
-        g.fillStyle(this.mapGrid[y][x] === 1 ? 0x0c1412 : shade, 1);
+        const shade = (x + y) % 2 === 0 ? 0x0c1c38 : 0x0a1830;
+        const wall = 0x061020;
+        g.fillStyle(this.mapGrid[y][x] === 1 ? wall : shade, 1);
         g.fillRect(x * TILE, y * TILE, TILE, TILE);
         if (this.mapGrid[y][x] === 0) {
-          // soft moss dots
-          g.fillStyle(0x1a2e24, 0.35);
-          g.fillCircle(x * TILE + 8 + ((x * 7) % 16), y * TILE + 10, 2);
+          // pixel grit
+          g.fillStyle(0x345878, 0.25);
+          g.fillRect(x * TILE + ((x * 5) % 20), y * TILE + ((y * 7) % 18), 2, 2);
         }
       }
     }
-    // trees
+    // trees as hard-pixel blue silhouettes
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
         if (this.mapGrid[y][x] !== 1) continue;
         const cx = x * TILE + TILE / 2;
         const cy = y * TILE + TILE / 2;
-        g.fillStyle(0x1a120c, 1);
+        g.fillStyle(0x0a1424, 1);
         g.fillRect(cx - 3, cy - 2, 6, 12);
-        g.fillStyle(0x1f3d2f, 1);
-        g.fillCircle(cx, cy - 8, 11);
-        g.fillStyle(0x2d5a42, 0.85);
-        g.fillCircle(cx - 4, cy - 10, 7);
-        g.fillStyle(0x3d7a58, 0.5);
-        g.fillCircle(cx + 3, cy - 12, 5);
+        g.fillStyle(0x1a3858, 1);
+        g.fillRect(cx - 10, cy - 16, 20, 14);
+        g.fillStyle(0x2a5080, 1);
+        g.fillRect(cx - 7, cy - 20, 14, 10);
+        g.fillStyle(0x70a8e0, 0.35);
+        g.fillRect(cx - 4, cy - 18, 4, 4);
       }
     }
     g.setDepth(0);
@@ -96,12 +98,15 @@ export class GroveScene extends Phaser.Scene {
 
   private createPlayer() {
     const tex = this.make.graphics({ x: 0, y: 0 });
-    tex.fillStyle(0xa78bfa, 1);
-    tex.fillRoundedRect(4, 6, 16, 18, 4);
-    tex.fillStyle(0xc4b5fd, 1);
-    tex.fillCircle(12, 8, 6);
-    tex.fillStyle(0x67e8f9, 0.9);
-    tex.fillCircle(12, 22, 3);
+    // chunky 2-bit adventurer — cream + bright blue
+    tex.fillStyle(0x081428, 1);
+    tex.fillRect(5, 6, 14, 18);
+    tex.fillStyle(0xd1e8f8, 1);
+    tex.fillRect(6, 7, 12, 16);
+    tex.fillStyle(0x70a8e0, 1);
+    tex.fillRect(8, 4, 8, 6);
+    tex.fillStyle(0x9ad8ff, 1);
+    tex.fillRect(10, 20, 4, 4);
     tex.generateTexture("player", 24, 28);
     tex.destroy();
 
@@ -114,25 +119,28 @@ export class GroveScene extends Phaser.Scene {
 
   private spawnCrystals() {
     const ctex = this.make.graphics({ x: 0, y: 0 });
-    ctex.fillStyle(0x67e8f9, 1);
-    ctex.fillTriangle(12, 2, 22, 16, 12, 28);
-    ctex.fillTriangle(12, 2, 2, 16, 12, 28);
-    ctex.fillStyle(0xe0f2fe, 0.85);
-    ctex.fillTriangle(12, 6, 18, 16, 12, 24);
+    // hard-edge diamond crystal
+    ctex.fillStyle(0x081428, 1);
+    ctex.fillRect(10, 2, 4, 26);
+    ctex.fillStyle(0x9ad8ff, 1);
+    ctex.fillTriangle(12, 2, 22, 15, 12, 28);
+    ctex.fillTriangle(12, 2, 2, 15, 12, 28);
+    ctex.fillStyle(0xd1e8f8, 1);
+    ctex.fillTriangle(12, 6, 17, 15, 12, 22);
     ctex.generateTexture("crystal", 24, 30);
     ctex.destroy();
 
     for (const c of CRYSTALS) {
       if (this.taken.has(c.id)) continue;
       const container = this.add.container(c.x * TILE + TILE / 2, c.y * TILE + TILE / 2);
-      const glow = this.add.circle(0, 0, 14, 0x67e8f9, 0.18);
+      const glow = this.add.rectangle(0, 0, 20, 20, 0x70a8e0, 0.2);
       const spr = this.add.image(0, 0, "crystal");
       container.add([glow, spr]);
       container.setDepth(5);
       container.setData("id", c.id);
       this.tweens.add({
         targets: container,
-        y: container.y - 4,
+        y: container.y - 3,
         duration: 900 + c.id * 40,
         yoyo: true,
         repeat: -1,
@@ -140,8 +148,8 @@ export class GroveScene extends Phaser.Scene {
       });
       this.tweens.add({
         targets: glow,
-        alpha: 0.35,
-        scale: 1.25,
+        alpha: 0.4,
+        scale: 1.2,
         duration: 700,
         yoyo: true,
         repeat: -1,
@@ -171,13 +179,13 @@ export class GroveScene extends Phaser.Scene {
     }
   }
 
-  floatText(x: number, y: number, text: string, color = "#a5f3fc") {
+  floatText(x: number, y: number, text: string, color = "#d1e8f8") {
     const t = this.add
       .text(x, y, text, {
-        fontFamily: "monospace",
-        fontSize: "12px",
+        fontFamily: "Press Start 2P, monospace",
+        fontSize: "8px",
         color,
-        stroke: "#0b0e14",
+        stroke: "#081428",
         strokeThickness: 3,
       })
       .setDepth(50)
@@ -193,7 +201,7 @@ export class GroveScene extends Phaser.Scene {
 
   burst(x: number, y: number) {
     for (let i = 0; i < 10; i++) {
-      const p = this.add.circle(x, y, 2, 0x67e8f9, 0.9).setDepth(40);
+      const p = this.add.rectangle(x, y, 3, 3, 0x9ad8ff, 0.95).setDepth(40);
       this.tweens.add({
         targets: p,
         x: x + Phaser.Math.Between(-30, 30),

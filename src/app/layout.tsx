@@ -1,10 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Inco Grove — Private RPG",
   description:
     "Top-down pixel RPG with encrypted inventory & stats on Inco Lightning (Base Sepolia).",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#081428",
 };
 
 export default function RootLayout({
@@ -22,11 +26,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
           rel="stylesheet"
         />
+        <meta name="theme-color" content="#081428" />
       </head>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

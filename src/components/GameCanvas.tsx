@@ -27,7 +27,8 @@ export default function GameCanvas({
     let destroyed = false;
 
     (async () => {
-      const Phaser = (await import("phaser")).default;
+      const PhaserMod = await import("phaser");
+      const Phaser = (PhaserMod as { default?: typeof import("phaser") }).default ?? PhaserMod;
       const { GroveScene } = await import("@/game/GroveScene");
       if (destroyed || !ref.current) return;
 
@@ -43,14 +44,14 @@ export default function GameCanvas({
         parent: ref.current,
         width: ref.current.clientWidth || 900,
         height: ref.current.clientHeight || 560,
-        backgroundColor: "#0a1018",
+        backgroundColor: "#081428",
         physics: { default: "arcade", arcade: { debug: false } },
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH,
         },
         scene: [scene],
-        render: { pixelArt: true, antialias: false },
+        render: { pixelArt: true, antialias: false, roundPixels: true },
       });
       gameRef.current = game;
       sceneApi.current = {
@@ -71,5 +72,11 @@ export default function GameCanvas({
     sceneApi.current?.setCollectedMask(collectedMask);
   }, [collectedMask]);
 
-  return <div ref={ref} className="h-full w-full min-h-[420px] rounded-xl overflow-hidden border border-grove-border" />;
+  return (
+    <div
+      ref={ref}
+      className="h-full min-h-[420px] w-full overflow-hidden"
+      style={{ imageRendering: "pixelated", background: "#081428" }}
+    />
+  );
 }
