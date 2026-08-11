@@ -15,9 +15,7 @@ export default function GameApp() {
   const [panel, setPanel] = useState<"none" | "inventory" | "character" | "quests">(
     "none"
   );
-  const [floats, setFloats] = useState<
-    { id: number; text: string }[]
-  >([]);
+  const [floats, setFloats] = useState<{ id: number; text: string }[]>([]);
 
   const collectedCount = (() => {
     let n = 0;
@@ -28,57 +26,53 @@ export default function GameApp() {
   const onCollect = useCallback(
     async (crystalId: number) => {
       const id = Date.now();
-      setFloats((f) => [...f, { id, text: "+5 DUST  +10 XP" }]);
+      setFloats((f) => [...f, { id, text: "+5 Dust · +10 XP · private update" }]);
       window.setTimeout(() => {
         setFloats((f) => f.filter((x) => x.id !== id));
-      }, 1000);
+      }, 1200);
 
       grove.applyOptimisticCollect();
 
       if (!grove.ready) {
-        grove.setError("Connect wallet + grant session to save privately on-chain");
+        grove.setError("Connect wallet once to seal loot with Inco (session key after that)");
         return;
       }
       try {
         await grove.collect(crystalId);
         if (grove.stats) await grove.decryptAll();
       } catch {
-        /* error in hook */
+        /* hook sets error */
       }
     },
     [grove]
   );
 
   return (
-    <div className="stage-root relative flex h-[100dvh] flex-col overflow-hidden bg-g-bg">
-      {/* Title strip — hard pixel */}
-      <header className="relative z-20 flex items-center justify-between border-b-2 border-g-bright bg-g-bg px-3 py-2">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-[#060e1c]">
+      <header className="relative z-20 flex items-center justify-between border-b border-sky-500/15 bg-[#060e1c]/90 px-4 py-3 backdrop-blur">
         <div>
-          <h1 className="text-[11px] tracking-[3px] text-g-cream text-shadow-pixel sm:text-[14px]">
-            INCO GROVE
+          <h1 className="text-lg font-semibold tracking-tight text-sky-50">
+            Inco Grove
           </h1>
-          <p className="mt-1 text-[7px] tracking-wider text-g-bright sm:text-[8px]">
-            PRIVATE RPG · INCO LIGHTNING · BASE SEPOLIA
+          <p className="text-xs text-sky-300/60">
+            3D collect-a-thon · encrypted inventory & stats on Inco Lightning
           </p>
         </div>
-        <a
-          className="text-[7px] text-g-bright underline hover:text-g-cream sm:text-[8px]"
-          href={`https://sepolia.basescan.org/address/${GROVE_ADDRESS}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {GROVE_ADDRESS.slice(0, 6)}…{GROVE_ADDRESS.slice(-4)}
-        </a>
+        <div className="text-right text-[11px] text-sky-300/70">
+          <a
+            className="underline hover:text-cyan-300"
+            href={`https://sepolia.basescan.org/address/${GROVE_ADDRESS}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            IncoGrove {GROVE_ADDRESS.slice(0, 6)}…{GROVE_ADDRESS.slice(-4)}
+          </a>
+          <div className="mt-0.5 text-sky-500/50">Base Sepolia</div>
+        </div>
       </header>
 
-      {!grove.configured && (
-        <div className="z-20 bg-g-mid px-3 py-1 text-center text-[8px] text-g-cream">
-          Set NEXT_PUBLIC_INCO_GROVE after deploy.
-        </div>
-      )}
-
       {grove.error && (
-        <div className="z-20 border-b-2 border-red-900 bg-[#200810] px-3 py-1 text-center text-[8px] text-red-200">
+        <div className="z-20 border-b border-red-500/30 bg-red-950/50 px-4 py-2 text-center text-xs text-red-100">
           {grove.error}{" "}
           <button type="button" className="underline" onClick={() => grove.setError(null)}>
             dismiss
@@ -86,14 +80,8 @@ export default function GameApp() {
         </div>
       )}
 
-      <div className="relative min-h-0 flex-1 bg-g-bg">
-        <GameCanvas
-          onCollect={(id) => onCollect(id)}
-          collectedMask={grove.mask}
-        />
-
-        {/* Galleria-style scanlines + vignette */}
-        <div className="stage-fx" aria-hidden />
+      <div className="relative min-h-0 flex-1">
+        <GameCanvas onCollect={onCollect} collectedMask={grove.mask} />
 
         <Hud
           short={grove.short}
@@ -109,11 +97,11 @@ export default function GameApp() {
           crystalTotal={CRYSTAL_COUNT}
         />
 
-        <div className="pointer-events-none absolute inset-0 z-15 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
           {floats.map((f) => (
             <div
               key={f.id}
-              className="absolute left-1/2 top-[36%] -translate-x-1/2 text-[10px] tracking-wide text-g-crystal text-shadow-pixel"
+              className="absolute left-1/2 top-[30%] -translate-x-1/2 rounded-full bg-cyan-500/15 px-4 py-1.5 text-sm text-cyan-100 shadow-[0_0_30px_rgba(34,211,238,0.25)]"
             >
               {f.text}
             </div>
@@ -121,8 +109,9 @@ export default function GameApp() {
         </div>
       </div>
 
-      <footer className="relative z-20 border-t-2 border-g-bright bg-g-bg px-3 py-1 text-center text-[7px] tracking-wider text-g-bright">
-        WASD / CLICK TO MOVE · WALK INTO CRYSTALS · SESSION KEY = NO POPUPS
+      <footer className="z-20 border-t border-sky-500/15 px-4 py-2 text-center text-[11px] text-sky-300/50">
+        WASD / arrows · click ground to move · walk into crystals ·{" "}
+        <span className="text-cyan-300/70">Inco euint stats</span> · session key collects
       </footer>
     </div>
   );

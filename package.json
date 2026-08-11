@@ -13,12 +13,16 @@
   "dependencies": {
     "@inco/lightning": "1.0.2",
     "@inco/lightning-js": "1.0.2",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "@types/three": "^0.185.4",
     "buffer": "^6.0.3",
     "next": "^15.1.0",
     "phaser": "^3.87.0",
     "process": "^0.11.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "three": "^0.185.1",
     "viem": "^2.23.2"
   },
   "devDependencies": {

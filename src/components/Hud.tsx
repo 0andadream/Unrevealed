@@ -37,257 +37,164 @@ export function Hud({
 
   return (
     <>
-      {/* Top-right counter — Galleria style */}
-      <div className="pointer-events-none absolute right-3 top-3 z-20 flex items-center gap-2 pixel-panel px-2 py-1.5 sm:px-3 sm:py-2">
-        <span className="inline-block h-3 w-3 rounded-sm bg-g-crystal shadow-[inset_1px_1px_0_#fff]" />
-        <span className="pixel-value text-[11px] sm:text-[14px]">
-          {collectedCount} / {crystalTotal}
-        </span>
-      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-4">
+        <div className="pointer-events-auto glass rounded-2xl px-4 py-3">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-sky-300/70">
+            Zone
+          </div>
+          <div className="text-base font-semibold text-sky-50">Whispering Grove</div>
+          <div className="mt-1 text-xs text-sky-300/60">
+            {collectedCount}/{crystalTotal} crystals · encrypted loot
+          </div>
+        </div>
 
-      {/* Top-left zone */}
-      <div className="pointer-events-none absolute left-3 top-3 z-20 pixel-panel px-3 py-2">
-        <div className="pixel-label">ZONE</div>
-        <div className="pixel-value mt-1 text-[10px] tracking-wider sm:text-[12px]">
-          WHISPERING GROVE
+        <div className="pointer-events-auto glass min-w-[200px] rounded-2xl px-4 py-3">
+          <div className="flex justify-between text-xs text-sky-200/80">
+            <span>Level {level}</span>
+            <span>{stats ? `${xp} XP` : "XP 🔒"}</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/40">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-400 transition-all"
+              style={{ width: `${stats ? xpPct : 0}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="pointer-events-auto">
+          {ready ? (
+            <div className="glass rounded-2xl px-4 py-3 text-xs text-emerald-300">
+              {short}
+              <div className="mt-0.5 text-[10px] text-sky-300/60">
+                Session key active · Inco private state
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={onConnect} className="glass-btn glass-btn-primary">
+              Connect wallet
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Connect / session — top center-right under counter on mobile */}
-      <div className="pointer-events-auto absolute right-3 top-14 z-20 sm:top-3 sm:right-36">
-        {ready ? (
-          <div className="pixel-panel px-2 py-1.5 text-[8px] text-g-bright sm:text-[9px]">
-            {short} · SESSION
-          </div>
-        ) : (
-          <button type="button" onClick={onConnect} className="pixel-btn pixel-btn-primary">
-            Connect
-          </button>
-        )}
-      </div>
-
       {busy && (
-        <div className="absolute left-1/2 top-16 z-30 -translate-x-1/2 pixel-panel px-3 py-2 text-[8px] text-g-gold sm:text-[9px]">
+        <div className="absolute left-1/2 top-24 z-30 -translate-x-1/2 glass rounded-xl px-4 py-2 text-xs text-amber-200">
           {busy}
         </div>
       )}
 
-      {/* Bottom HUD bar — Galleria dock */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 p-4">
         {log[0] && (
-          <div className="mx-auto mb-1 max-w-xl truncate px-3 text-center text-[8px] text-g-bright text-shadow-pixel">
+          <div className="max-w-lg truncate rounded-full bg-black/50 px-4 py-1.5 text-center text-[11px] text-sky-100/80">
             {log[0]}
           </div>
         )}
-
-        <div className="relative flex h-[72px] items-stretch bg-g-mid sm:h-[88px]">
-          {/* top cream border */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-g-cream" />
-          <div className="pointer-events-none absolute inset-x-0 top-[3px] h-[2px] bg-g-bright/70" />
-
-          {/* rivets */}
-          <span className="rivet left-2 top-2" />
-          <span className="rivet right-2 top-2" />
-          <span className="rivet bottom-2 left-2" />
-          <span className="rivet bottom-2 right-2" />
-
-          <HudCell label="LEVEL" value={String(level)} />
-          <HudCell
-            label="XP"
-            value={stats ? String(xp) : "—"}
-            bar={stats ? xpPct : 0}
-          />
-
-          {/* Center action pocket */}
-          <div className="pointer-events-auto relative z-10 flex w-[min(42vw,220px)] shrink-0 flex-col items-center justify-end pb-1">
-            <div className="flex flex-wrap justify-center gap-1 px-1">
-              {(
-                [
-                  ["inventory", "BAG"],
-                  ["character", "STATS"],
-                  ["quests", "QUEST"],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`pixel-btn !px-2 !py-1.5 !text-[7px] sm:!text-[8px] ${
-                    panel === id ? "!bg-g-bright !text-g-bg" : ""
-                  }`}
-                  onClick={() => onPanel(panel === id ? "none" : id)}
-                >
-                  {label}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="pixel-btn !px-2 !py-1.5 !text-[7px] text-g-crystal sm:!text-[8px]"
-                onClick={onDecrypt}
-              >
-                DECRYPT
-              </button>
-            </div>
-          </div>
-
-          <HudCell
-            label="DUST"
-            value={stats ? String(stats.dust) : "🔒"}
-          />
-          <HudCell
-            label="QUEST"
-            value={stats ? `${stats.quest}/${QUEST_TARGET}` : "🔒"}
-            bar={stats ? questPct : 0}
-          />
+        <div className="pointer-events-auto flex flex-wrap justify-center gap-2">
+          {(
+            [
+              ["inventory", "Inventory"],
+              ["character", "Private stats"],
+              ["quests", "Quest"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`glass-btn ${panel === id ? "ring-1 ring-cyan-300/50" : ""}`}
+              onClick={() => onPanel(panel === id ? "none" : id)}
+            >
+              {label}
+            </button>
+          ))}
+          <button type="button" className="glass-btn glass-btn-primary" onClick={onDecrypt}>
+            Decrypt with Inco
+          </button>
         </div>
       </div>
 
-      {/* Floating panels */}
-      {panel === "inventory" && (
-        <Panel title="INVENTORY" onClose={() => onPanel("none")}>
-          <Item name="Crystal Dust" locked={!stats} value={stats?.dust} onDecrypt={onDecrypt} />
-          <Item name="Potions" locked={!stats} value={stats?.potions} onDecrypt={onDecrypt} />
-          <Item name="Map Pieces" locked={!stats} value={stats?.maps} onDecrypt={onDecrypt} />
-          <p className="mt-3 text-[7px] leading-relaxed text-g-bright">
-            Encrypted on Inco Lightning. Only you can decrypt.
-          </p>
-        </Panel>
-      )}
-
-      {panel === "character" && (
-        <Panel title="PRIVATE STATS" onClose={() => onPanel("none")}>
-          <Stat label="HP" value={stats?.hp} onDecrypt={onDecrypt} />
-          <Stat label="ATK" value={stats?.atk} onDecrypt={onDecrypt} />
-          <Stat label="DEF" value={stats?.def} onDecrypt={onDecrypt} />
-          <Stat label="LUCK" value={stats?.luck} onDecrypt={onDecrypt} />
-          <Stat label="LEVEL" value={stats?.level} onDecrypt={onDecrypt} />
-          <Stat label="XP" value={stats?.xp} onDecrypt={onDecrypt} />
-        </Panel>
-      )}
-
-      {panel === "quests" && (
-        <Panel title="QUESTS" onClose={() => onPanel("none")}>
-          <div className="border-2 border-g-bright bg-g-bg p-3 shadow-pixel">
-            <div className="text-[9px] text-g-crystal">GATHER CRYSTAL DUST</div>
-            <div className="mt-2 text-[7px] leading-relaxed text-g-bright">
-              Walk the grove. Collect crystals. Progress stays private on-chain.
-            </div>
-            <div className="pixel-bar mt-3">
-              <i style={{ width: `${questPct}%` }} />
-            </div>
-            <div className="mt-1 text-right text-[8px] text-g-cream">
-              {stats ? `${stats.quest} / ${QUEST_TARGET}` : "DECRYPT TO VIEW"}
-            </div>
-            {(stats?.quest ?? 0) >= QUEST_TARGET && (
-              <div className="mt-2 text-[8px] text-g-gold">QUEST COMPLETE</div>
-            )}
+      {panel !== "none" && (
+        <div className="absolute bottom-24 left-1/2 z-30 w-[min(360px,92vw)] -translate-x-1/2 glass rounded-2xl p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold tracking-wide text-sky-50">
+              {panel === "inventory" && "Inventory"}
+              {panel === "character" && "Private stats"}
+              {panel === "quests" && "Quest"}
+            </h2>
+            <button
+              type="button"
+              className="text-sky-300/70 hover:text-white"
+              onClick={() => onPanel("none")}
+            >
+              ✕
+            </button>
           </div>
-        </Panel>
+
+          {panel === "inventory" && (
+            <>
+              <Row label="Crystal Dust" value={stats?.dust} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="Potions" value={stats?.potions} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="Map pieces" value={stats?.maps} locked={!stats} onDecrypt={onDecrypt} />
+              <p className="mt-3 text-[11px] leading-relaxed text-sky-300/60">
+                Stored as Inco <code className="text-cyan-300">euint256</code> handles.
+                Only your wallet/session can decrypt.
+              </p>
+            </>
+          )}
+
+          {panel === "character" && (
+            <>
+              <Row label="HP" value={stats?.hp} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="ATK" value={stats?.atk} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="DEF" value={stats?.def} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="Luck" value={stats?.luck} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="Level" value={stats?.level} locked={!stats} onDecrypt={onDecrypt} />
+              <Row label="XP" value={stats?.xp} locked={!stats} onDecrypt={onDecrypt} />
+            </>
+          )}
+
+          {panel === "quests" && (
+            <div className="rounded-xl border border-sky-500/20 bg-black/20 p-3">
+              <div className="text-sm text-cyan-200">Gather 20 Crystal Dust</div>
+              <div className="mt-1 text-[11px] text-sky-300/60">
+                Progress is an encrypted on-chain value.
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/40">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+                  style={{ width: `${questPct}%` }}
+                />
+              </div>
+              <div className="mt-1 text-right text-[11px] text-sky-200/70">
+                {stats ? `${stats.quest} / ${QUEST_TARGET}` : "Decrypt to view"}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </>
   );
 }
 
-function HudCell({
+function Row({
   label,
-  value,
-  bar,
-}: {
-  label: string;
-  value: string;
-  bar?: number;
-}) {
-  return (
-    <div
-      className="pointer-events-none flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-r-2 border-g-bg px-1 shadow-pixel-inset"
-      style={{ borderLeft: "1px solid #345878" }}
-    >
-      <span className="pixel-label whitespace-nowrap">{label}</span>
-      <span className="pixel-value text-[11px] sm:text-[16px]">{value}</span>
-      {bar != null && (
-        <div className="pixel-bar mt-0.5 w-[72%]">
-          <i style={{ width: `${bar}%` }} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Panel({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="absolute bottom-24 left-1/2 z-30 w-[min(340px,92vw)] -translate-x-1/2 pixel-panel p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[10px] tracking-wider text-g-cream text-shadow-pixel">
-          {title}
-        </h2>
-        <button
-          type="button"
-          className="text-g-bright hover:text-g-cream"
-          onClick={onClose}
-        >
-          X
-        </button>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Item({
-  name,
   value,
   locked,
   onDecrypt,
 }: {
-  name: string;
+  label: string;
   value?: number;
   locked: boolean;
   onDecrypt: () => void;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between border-2 border-g-mid bg-g-deep px-3 py-2">
-      <div>
-        <div className="text-[8px] text-g-cream">{name}</div>
-        <div className="mt-1 text-[7px] text-g-bright">
-          {locked ? "LOCKED · ENCRYPTED" : value}
-        </div>
-      </div>
+    <div className="mb-2 flex items-center justify-between border-b border-white/5 py-2 text-sm">
+      <span className="text-sky-200/70">{label}</span>
       {locked ? (
-        <button type="button" className="pixel-btn !py-1 !text-[7px]" onClick={onDecrypt}>
-          DECRYPT
+        <button type="button" className="text-xs text-cyan-300 underline" onClick={onDecrypt}>
+          🔒 Decrypt
         </button>
       ) : (
-        <span className="pixel-value text-[12px]">{value}</span>
-      )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  onDecrypt,
-}: {
-  label: string;
-  value?: number;
-  onDecrypt: () => void;
-}) {
-  return (
-    <div className="mb-1 flex items-center justify-between border-b border-g-mid/60 py-1.5">
-      <span className="text-[8px] text-g-bright">{label}</span>
-      {value == null ? (
-        <button type="button" className="text-[7px] text-g-crystal underline" onClick={onDecrypt}>
-          DECRYPT
-        </button>
-      ) : (
-        <span className="pixel-value text-[11px]">{value}</span>
+        <span className="font-medium text-sky-50">{value}</span>
       )}
     </div>
   );

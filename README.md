@@ -2,7 +2,14 @@
 
 **Private progression RPG** for the [Inco Summer Game Jam](https://www.inco.org/blog/summer-game-jam-resources-and-what-to-build).
 
-Walk the **Whispering Grove**, collect glowing crystals, and every pickup updates **encrypted on-chain inventory, XP, and stats** via **Inco Lightning** on **Base Sepolia**. After a one-time wallet connect + session-key grant, collects are signed by a **session key** (no wallet popups).
+Explore a **3D Whispering Grove** (React Three Fiber), collect glowing crystals, and every pickup updates **encrypted on-chain inventory, XP, and stats** via **Inco Lightning** on **Base Sepolia**. After a one-time wallet connect + session-key grant, collects are signed by a **session key** (no wallet popups).
+
+### How Inco is actually used
+
+1. **`IncoGrove.sol`** stores player dust / potions / XP / level / HP / ATK / DEF / luck / quest progress as **`euint256`** handles (not plaintext).
+2. On **`collect(crystalId)`**, the contract runs encrypted math (`e.add`, and level-ups via `e.ge` + `e.select`) and **`allow(player)` + `allow(session)`** so only you can decrypt.
+3. The UI never reads stats from public chain storage — it calls **`attestedDecrypt`** (Inco JS) on those handles.
+4. Crystal *positions* on the map are public; *your inventory numbers* stay private until you hit **Decrypt with Inco**.
 
 ![Inco Grove](https://img.shields.io/badge/Inco-Lightning-a78bfa) ![Base Sepolia](https://img.shields.io/badge/Base-Sepolia-blue)
 
