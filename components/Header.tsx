@@ -2,6 +2,9 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useChainId } from "wagmi";
+import { formatUsd } from "@/lib/prices";
+import { useMarkets } from "@/lib/useMarkets";
+import type { TokenSymbol } from "@/lib/schema";
 
 const CHAIN_LABEL: Record<number, string> = {
   196: "X Layer",
@@ -9,30 +12,57 @@ const CHAIN_LABEL: Record<number, string> = {
   31337: "Anvil",
 };
 
+const TICK: TokenSymbol[] = ["OKB", "ETH", "WBTC", "USDC"];
+
 export function Header() {
   const chainId = useChainId();
   const { isConnected } = useAccount();
+  const markets = useMarkets();
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-white/[0.06] px-5 py-3">
-      <div className="flex items-center gap-3">
-        <span className="grid h-8 w-8 place-items-center rounded-md bg-lime font-mono text-xs font-medium text-void">
-          UR
-        </span>
-        <div>
-          <div className="text-sm font-medium tracking-tight">Unrevealed</div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">
-            X Layer · NL desk
+    <header className="border-b border-white/[0.06]">
+      <div className="flex items-center justify-between gap-4 px-5 py-3">
+        <div className="flex items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-lime font-mono text-xs font-medium text-void">
+            UR
+          </span>
+          <div>
+            <div className="text-sm font-medium tracking-tight">Unrevealed</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">
+              X Layer · live spot
+            </div>
           </div>
         </div>
+        <div className="flex items-center gap-3">
+          {isConnected && (
+            <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-mist-500 sm:inline">
+              {CHAIN_LABEL[chainId] ?? `chain ${chainId}`}
+            </span>
+          )}
+          <ConnectButton chainStatus="icon" showBalance={false} accountStatus="address" />
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        {isConnected && (
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-mist-500 sm:inline">
-            {CHAIN_LABEL[chainId] ?? `chain ${chainId}`}
-          </span>
-        )}
-        <ConnectButton chainStatus="icon" showBalance={false} accountStatus="address" />
+      <div className="flex gap-4 overflow-x-auto border-t border-white/[0.04] px-5 py-1.5 font-mono text-[10px] text-mist-300">
+        {TICK.map((s) => {
+          const t = markets.data?.tokens[s];
+          if (!t) {
+            return (
+              <span key={s} className="shrink-0 text-mist-500">
+                {s} …
+              </span>
+            );
+          }
+          const up = t.change24h >= 0;
+          return (
+            <span key={s} className="shrink-0 tabular-nums">
+              {s} {formatUsd(t.price, t.price >= 100 ? 2 : 4)}{" "}
+              <span className={up ? "text-signal" : "text-danger"}>
+                {up ? "+" : ""}
+                {t.change24h.toFixed(2)}%
+              </span>
+            </span>
+          );
+        })}
       </div>
     </header>
   );

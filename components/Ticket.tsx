@@ -12,8 +12,10 @@ import { maxUint256 } from "viem";
 import { ADDR, contractsReady, tokenAddress } from "@/lib/config";
 import { bookAbi, erc20Abi, poolAbi } from "@/lib/abi";
 import { prettyAmount, toUnits, toUsd8 } from "@/lib/format";
+import { formatUsd } from "@/lib/prices";
+import { useMarkets } from "@/lib/useMarkets";
 import { explorerTx } from "@/lib/chains";
-import type { TradeIntent } from "@/lib/schema";
+import type { TokenSymbol, TradeIntent } from "@/lib/schema";
 
 function condLabel(intent: TradeIntent) {
   const c = intent.condition;
@@ -33,6 +35,7 @@ export function Ticket({
   const publicClient = usePublicClient();
   const { writeContractAsync, isPending } = useWriteContract();
   const [err, setErr] = useState<string | null>(null);
+  const markets = useMarkets();
 
   const tokenIn = intent.tokenIn ?? "";
   const tokenOut = intent.tokenOut ?? "";
@@ -184,7 +187,20 @@ export function Ticket({
         <span className="chip">
           {intent.action.replace("_", " ")} · {intent.confidence}
         </span>
-        {condLabel(intent) && <span className="font-mono text-[11px] text-lime">{condLabel(intent)}</span>}
+        {condLabel(intent) && (
+          <span className="font-mono text-[11px] text-lime">
+            {condLabel(intent)}
+            {intent.condition?.asset &&
+              markets.data?.tokens[intent.condition.asset.toUpperCase() as TokenSymbol] && (
+                <span className="ml-2 text-mist-500">
+                  now{" "}
+                  {formatUsd(
+                    markets.data.tokens[intent.condition.asset.toUpperCase() as TokenSymbol].price,
+                  )}
+                </span>
+              )}
+          </span>
+        )}
       </div>
       {intent.action !== "cancel" ? (
         <div className="mb-3">

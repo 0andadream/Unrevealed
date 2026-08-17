@@ -16,10 +16,10 @@ Repo: https://github.com/0andadream/Unrevealed
 2. Open http://localhost:3000 → **Connect** (Anvil #0 or OKX Wallet on X Layer Testnet).
 3. **Faucet** for mock USDC / USDT / ETH / WBTC. Native OKB is the chain gas token (Anvil ETH is labeled OKB).
 4. Chip: **swap 5 OKB for USDC** → Confirm swap.
-5. Chip: **dump my OKB into USDC once it pumps past 55 bucks** → Place limit.
-6. **Demo prices → OKB $60** → **Fill** on the resting order.
-7. Chip: **swap half my USDT for ETH if it drops below 2800** → **ETH $2600** → Fill.
-8. `cancel my order #1` if anything is still open.
+5. Chip a limit using a price vs the **live** ticker (header + right rail). Fill only when spot prints through the trigger.
+6. `cancel my order #1` if anything is still open.
+
+Prices and 24h stats come from **OKX spot** (last, change, high/low, volume) with **CoinGecko** market cap. The desk polls `/api/prices` every ~12s. Limit fills write that live USD print onto the on-chain oracle, then execute.
 
 Without `XAI_API_KEY` the desk uses a local parser that covers the examples. With a key, Grok 4.6 (`https://api.x.ai/v1`) does the parse.
 

@@ -2,8 +2,10 @@
 
 import { useAccount, useBalance, useReadContract, useWriteContract } from "wagmi";
 import { ADDR } from "@/lib/config";
-import { erc20Abi, faucetAbi, oracleAbi } from "@/lib/abi";
-import { prettyAmount, usd8 } from "@/lib/format";
+import { erc20Abi, faucetAbi } from "@/lib/abi";
+import { prettyAmount, fromUnits } from "@/lib/format";
+import { formatUsd } from "@/lib/prices";
+import { useMarkets } from "@/lib/useMarkets";
 import type { TokenSymbol } from "@/lib/schema";
 import { SUPPORTED_TOKENS } from "@/lib/schema";
 
@@ -26,6 +28,7 @@ function Row({
   native?: boolean;
   owner?: `0x${string}`;
 }) {
+  const markets = useMarkets();
   const nativeBal = useBalance({ address: owner, query: { enabled: Boolean(native && owner) } });
   const erc20 = useReadContract({
     address: address || undefined,
@@ -34,29 +37,32 @@ function Row({
     args: owner ? [owner] : undefined,
     query: { enabled: Boolean(!native && address && owner) },
   });
-  const price = useReadContract({
-    address: ADDR.oracle || undefined,
-    abi: oracleAbi,
-    functionName: "usdPrice",
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(ADDR.oracle && address) },
-  });
 
   const raw = native ? nativeBal.data?.value : erc20.data;
-  const px = price.data != null ? usd8(price.data) : null;
+  const stat = markets.data?.tokens[symbol];
+  const held = raw != null ? Number(fromUnits(raw, symbol)) : null;
+  const usd = held != null && stat ? held * stat.price : null;
+  const up = (stat?.change24h ?? 0) >= 0;
 
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <div>
+    <div className="border-t border-white/[0.05] py-2 first:border-t-0">
+      <div className="flex items-baseline justify-between gap-3">
         <div className="text-sm">{symbol}</div>
-        {px != null && (
-          <div className="font-mono text-[10px] text-mist-500">
-            ${px.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-          </div>
-        )}
+        <div className="font-mono text-sm tabular-nums">
+          {raw == null ? "—" : prettyAmount(raw, symbol)}
+        </div>
       </div>
-      <div className="font-mono text-sm tabular-nums">
-        {raw == null ? "—" : prettyAmount(raw, symbol)}
+      <div className="mt-0.5 flex items-baseline justify-between gap-3 font-mono text-[10px]">
+        <span className="text-mist-500">
+          {stat ? formatUsd(stat.price, stat.price >= 100 ? 2 : 4) : markets.isLoading ? "…" : "—"}
+          {stat && (
+            <span className={`ml-1.5 ${up ? "text-signal" : "text-danger"}`}>
+              {up ? "+" : ""}
+              {stat.change24h.toFixed(2)}%
+            </span>
+          )}
+        </span>
+        <span className="text-mist-500">{usd == null ? "" : formatUsd(usd)}</span>
       </div>
     </div>
   );
@@ -65,11 +71,21 @@ function Row({
 export function Balances() {
   const { address } = useAccount();
   const { writeContract, isPending } = useWriteContract();
+  const markets = useMarkets();
 
   return (
     <aside className="panel p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">Balances</div>
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">Wallet</div>
+          <div className="mt-0.5 font-mono text-[10px] text-mist-500/80">
+            {markets.data
+              ? `${markets.data.source} · ${new Date(markets.data.updatedAt).toLocaleTimeString()}`
+              : markets.isError
+                ? "feed error"
+                : "loading feed…"}
+          </div>
+        </div>
         {ADDR.faucet ? (
           <button
             className="btn-ghost !px-3 !py-1 text-[11px]"
@@ -91,7 +107,7 @@ export function Balances() {
         return <Row key={s} symbol={s} address={m.address} native={m.native} owner={address} />;
       })}
       <p className="mt-3 text-[11px] leading-relaxed text-mist-500">
-        OKB is native gas. USDC/USDT/ETH/WBTC are demo mocks — drip the faucet, then talk to the desk.
+        Prices are live spot. On testnet/Anvil the ERC-20s are still faucet mints — OKB is native gas.
       </p>
     </aside>
   );
