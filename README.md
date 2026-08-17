@@ -1,6 +1,8 @@
 # Unrevealed
 
-**Say the trade. Grok parses it. Swaps and limit orders on X Layer.**
+**See the coin. Then say the trade.**
+
+Home analyzes any ERC-20 deployed on X Layer (OKB’s chain). The desk still parses English into swaps and limits.
 
 Natural-language trading desk for the X Layer BuildX AI Season hackathon. Type English — `swap 5 OKB for USDC`, `dump my OKB into USDC once it pumps past 55 bucks` — and the parser returns a structured intent. You confirm in-wallet. Immediate swaps hit a constant-product AMM. Conditional orders sit in escrow until the demo oracle prints the trigger.
 
@@ -13,11 +15,11 @@ Repo: https://github.com/0andadream/Unrevealed
 ## 3-minute demo
 
 1. `anvil` in one terminal, then `bash scripts/dev-local.sh`, then `pnpm dev`.
-2. Open http://localhost:3000 → **Connect** (Anvil #0 or OKX Wallet on X Layer Testnet).
-3. **Faucet** for mock USDC / USDT / ETH / WBTC. Native OKB is the chain gas token (Anvil ETH is labeled OKB).
-4. Chip: **swap 5 OKB for USDC** → Confirm swap.
-5. Chip a limit using a price vs the **live** ticker (header + right rail). Fill only when spot prints through the trigger.
-6. `cancel my order #1` if anything is still open.
+2. Open http://localhost:3000 — **home**. Paste a token `0x` on X Layer (or `OKB`) → Analyze.
+3. **Desk** is at `/desk`. Connect (Anvil #0 or OKX Wallet on X Layer Testnet).
+4. **Faucet** for mock USDC / USDT / ETH / WBTC. Native OKB is the chain gas token (Anvil ETH is labeled OKB).
+5. Chip: **swap 5 OKB for USDC** → Confirm swap.
+6. Chip a limit using a price vs the **live** ticker. Fill only when spot prints through the trigger.
 
 Prices and 24h stats come from **OKX spot** (last, change, high/low, volume) with **CoinGecko** market cap. The desk polls `/api/prices` every ~12s. Limit fills write that live USD print onto the on-chain oracle, then execute.
 

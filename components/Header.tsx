@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useChainId } from "wagmi";
 import { formatUsd } from "@/lib/prices";
@@ -14,24 +16,48 @@ const CHAIN_LABEL: Record<number, string> = {
 
 const TICK: TokenSymbol[] = ["OKB", "ETH", "WBTC", "USDC"];
 
+const NAV = [
+  { href: "/", label: "Home" },
+  { href: "/analyze", label: "Analyze" },
+  { href: "/desk", label: "Desk" },
+];
+
 export function Header() {
   const chainId = useChainId();
   const { isConnected } = useAccount();
   const markets = useMarkets();
+  const path = usePathname();
 
   return (
     <header className="border-b border-white/[0.06]">
       <div className="flex items-center justify-between gap-4 px-5 py-3">
-        <div className="flex items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-lime font-mono text-xs font-medium text-void">
-            UR
-          </span>
-          <div>
-            <div className="text-sm font-medium tracking-tight">Unrevealed</div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">
-              X Layer · live spot
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-3">
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-lime font-mono text-xs font-medium text-void">
+              UR
+            </span>
+            <div>
+              <div className="text-sm font-medium tracking-tight">Unrevealed</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist-500">
+                X Layer · OKB
+              </div>
             </div>
-          </div>
+          </Link>
+          <nav className="hidden items-center gap-5 text-sm text-mist-500 md:flex">
+            {NAV.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={
+                  (n.href === "/" ? path === "/" : path?.startsWith(n.href))
+                    ? "text-lime"
+                    : "hover:text-mist"
+                }
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
         </div>
         <div className="flex items-center gap-3">
           {isConnected && (
@@ -41,6 +67,19 @@ export function Header() {
           )}
           <ConnectButton chainStatus="icon" showBalance={false} accountStatus="address" />
         </div>
+      </div>
+      <div className="flex items-center justify-between gap-4 border-t border-white/[0.04] px-5 py-1.5 md:hidden">
+        {NAV.map((n) => (
+          <Link
+            key={n.href}
+            href={n.href}
+            className={`font-mono text-[11px] uppercase tracking-[0.14em] ${
+              (n.href === "/" ? path === "/" : path?.startsWith(n.href)) ? "text-lime" : "text-mist-500"
+            }`}
+          >
+            {n.label}
+          </Link>
+        ))}
       </div>
       <div className="flex gap-4 overflow-x-auto border-t border-white/[0.04] px-5 py-1.5 font-mono text-[10px] text-mist-300">
         {TICK.map((s) => {

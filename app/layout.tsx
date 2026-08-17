@@ -18,8 +18,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unrevealed — NL trading on X Layer",
-  description: "Say the trade. Grok parses it. Swaps and limit orders on X Layer.",
+  title: "Unrevealed — analyze coins on X Layer",
+  description: "Paste a token deployed on X Layer. Grok reads the contract. Trade from the desk.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
