@@ -1,37 +1,35 @@
 import type { Config } from "tailwindcss";
 
-/**
- * Galleria-inspired palette, blue-shifted.
- * Original Galleria: #081820 / #346856 / #88c070 / #e3f8d1
- * Ours (blue):       #081428 / #345878 / #70a8e0 / #d1e8f8
- */
 const config: Config = {
-  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        g: {
-          bg: "#081428",
-          mid: "#345878",
-          bright: "#70a8e0",
-          cream: "#d1e8f8",
-          deep: "#040c18",
-          crystal: "#9ad8ff",
-          gold: "#e8c86a",
+        void: {
+          DEFAULT: "#08090b",
+          800: "#101216",
+          700: "#161a20",
+          600: "#1d222a",
         },
+        mist: {
+          DEFAULT: "#e8edf2",
+          300: "#b4bcc6",
+          500: "#8b95a1",
+        },
+        lime: {
+          DEFAULT: "#c6f04d",
+          200: "#d9ff7a",
+        },
+        signal: "#3ee0a0",
+        danger: "#ff5c5c",
       },
       fontFamily: {
-        pixel: ['"Press Start 2P"', "Courier New", "monospace"],
-        ui: ['"Press Start 2P"', "Courier New", "monospace"],
-      },
-      boxShadow: {
-        pixel: "0 0 0 2px #081428, 3px 3px 0 rgba(4,12,24,0.55)",
-        "pixel-inset":
-          "inset 2px 2px 0 rgba(112,168,224,0.30), inset -2px -2px 0 rgba(8,20,40,0.55)",
-        "pixel-hard": "2px 2px 0 #081428",
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
     },
   },
   plugins: [],
 };
+
 export default config;
